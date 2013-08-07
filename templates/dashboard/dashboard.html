@@ -1,0 +1,56 @@
+{% extends "index.html" %}
+    {% block title%} {{user}} {% endblock %}
+
+    {% block footer %}
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type="text/javascript" src="http://code.jquery.com/jquery-2.0.3.js"></script>
+        <script src="/static/prettycheckable/prettyCheckable.js"></script>
+        <script src="/static/js/dashboard.js"></script>
+
+        
+    {% endblock %}
+        
+    {% block content %}
+
+        <div class="row">
+            
+            <div class="span15">      
+            <br><br><br><br><br><br>
+             <ul class="nav nav-pills nav-stacked span5">
+                <li  class = "active"><a href="{% url 'grabhalo_dashboard' %}" class="span3">Home</a></li>
+                <li><a href="{% url 'grabhalo_chats' %}" class="span3">Chats</a></li>
+                <li><a href="{% url 'grabhalo_logout' %}" class="span3">Logout</a></li>
+            </ul>        
+            </div>
+                <div class="row">
+                    <div class="span9">
+                    <br><br>
+                        <form id="form" method="POST" action="/dashboard/">
+               
+                            
+                            <h2>Welcome {{user }} </h2>
+                            <br><br><br>
+                            {% csrf_token %}
+                            {{ form.as_p }}
+                            <input type="submit" value="Send" class = "btn btn-primary" id = "submit">             
+                            
+                    </div> <!--end of div class span9 -->
+                    
+                            <div class="span3">
+
+                                <br><br>
+                                <h2>Users</h2>
+                                <br><br>
+                                {% for user in users %}
+                                    <!--{{user.name}}{{check_form.as_p}}-->
+                                    <input type="checkbox" class="check" name = "users" value="{{user.id}}"/> {{user.name}}<br><br/>
+                                    
+                                {%endfor%}
+                        </form>
+ 
+                    </div> <!--end of div span3-->
+                </div><!--end of div row-->
+            </div>
+        </div>
+
+    {% endblock %}
