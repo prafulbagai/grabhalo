@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import  User
+from phonenumber_field.modelfields import PhoneNumberField
 
 class GrabhaloUser(models.Model):
     name            = models.CharField(max_length = 64)
@@ -27,7 +28,8 @@ class WebQuery(models.Model):
 class WebReply(models.Model):
     conversation_id = models.IntegerField()
     user_id         = models.IntegerField()
-    one_to_one_id   = models.IntegerField()
     sent_to         = models.IntegerField()
     chat            = models.CharField(max_length = 500)
     date_time       = models.DateTimeField()
+
+

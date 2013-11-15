@@ -1,14 +1,25 @@
 {% extends "index.html" %}
-{% block left %} {% endblock %}
+{% block css %} 
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.css"/>
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-responsive.css"/>
+  <link rel="stylesheet" type="text/css" href="/static/css/register.css"/>
+    
+{% endblock %}
 {% block content %}
-	<div class="container" >
-		<form action="." method="POST" class="form-signin">
-		<h2 class="form-signin-heading">Register</h2>
-		   {% csrf_token %}
-		   {{ form.as_p }}
-		   <input type ="submit" value= "Register" class="btn btn-primary">
-		</form>
-	</div>
+	
+	<div class="wrap">
+		<div class="content-wrap">
+			<a href="{% url 'grabhalo_login' %}"><h4>Click to Login.</h4></a>
+			<div class="container" >
+			    <form action ="." method = POST class="form-signin" class="well form-inline">
+			      	<h3 class="form-signin-heading"></h3>
+				    {% csrf_token %}    
+			        {{ form.as_p }}
+			        <input type = "submit" value = "Register" class="btn btn-primary">
+			    </form>
+		    </div>
+		</div>
+	</div><!--end of wrap-->
+
 
 {% endblock %}
-

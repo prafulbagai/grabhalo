@@ -9,118 +9,75 @@ from itertools import chain
 from operator import attrgetter
 from django.db.models import Q
 import re
+from django.views.decorators.csrf import csrf_exempt
+import json
+import datetime
+
 
 @login_required
+@csrf_exempt
 def dashboard(request):
-	users = GrabhaloUser.objects.all()
-	form = ChatForm(request.POST or None)
-	#check_form = UserForm(request.POST or None)
+	users = GrabhaloUser.objects.exclude(user_id = request.user.id)
 
-	if request.method == 'POST':
-		if(form.is_valid()):# and check_form.is_valid()):
-			selected_users = request.POST.getlist('users')
-			#selected_users = check_form.cleaned_data['user']
-			query = form.cleaned_data['chat']
-			send_query(request,selected_users,query)
-
-	ctx = {
-			'users' : users,
-			'form'	: form,
-	#		'check_form' : check_form,
-	}
+	if request.is_ajax():
+		if request.POST.has_key('message'):
+			selected_users = request.POST.getlist('selected_users[]')
+			message = request.POST['message']
+			send_query(request,selected_users,message)
+	
+	ctx = { 'users' : users }
 
 	return render_to_response('dashboard/dashboard.html',ctx, context_instance = RequestContext(request))
-	
+
+
+@csrf_exempt
 @login_required
 def chats(request):
+	user_id = GrabhaloUser.objects.filter(user_id = request.user.id)[0].id
+	chats = WebReply.objects.filter(sent_to = user_id)
+	user_conversation_set = set()
+	chats_dict = dict()
 
-	#----------SEND REPLY-------------
-	form = ChatForm(request.POST or None)
+	if request.is_ajax():
+		if request.POST.has_key('selected_message_id'):
+			selected_message_id = (request.POST['selected_message_id']).split("_")
+			user_id = selected_message_id[0]
+			c_id = selected_message_id[1]
+			web_reply = WebReply.objects.filter(conversation_id = c_id).filter( Q(user_id = user_id) |  Q(sent_to = user_id))
 
-	if request.method == 'POST':
-		if(form.is_valid()):
-			
-			reply_id =  map(int, re.findall(r'\d+', str(request.POST.getlist('reply_id'))))
-			conversation_id = reply_id[0]
-			reply_id.pop(0)
-			selected_users = reply_id
-			reply = form.cleaned_data['chat']
-			send_reply(request,conversation_id,selected_users,reply)
+			for reply in web_reply:
+				time = str(reply.date_time)
+				message = reply.chat
+				user_id = reply.user_id
+				user_name = GrabhaloUser.objects.filter(id = user_id)[0].name
+				chats_dict.update({time:{user_name:message}})
+			print chats_dict
+			return HttpResponse(json.dumps(chats_dict), content_type="application/json")
 
-	#--------END OF SEND REPLY--------
+		elif request.POST.has_key("save_chat"):
+			selected_chat_id = (request.POST['selected_chat_id']).split("_")
+			sent_to = selected_chat_id[0]
+			c_id = selected_chat_id[1]
+			message = request.POST['message']
+			date_time = datetime.datetime.now()
+			web_reply = WebReply(sent_to = sent_to, conversation_id = c_id, chat = message, user_id = user_id, \
+								date_time = date_time)
+			web_reply.save()
 
-	#--------GET CHAT DATA------------
-	DATE_FORMAT = "%Y-%m-%d" 
-	TIME_FORMAT = "%H:%M:%S"
-	
-	chat_dict = {}
 
-	web_reply_data = WebReply.objects.filter( Q(user_id = request.user.id) |  Q(sent_to = request.user.id))
 
-	web_query_data = WebQuery.objects.filter(user_id = request.user.id).order_by('-date_time')
+	for chat in chats:
+		user_conversation_set.add((chat.user_id,chat.conversation_id))
 
-	chat_data = sorted(chain(web_reply_data,web_query_data), key=attrgetter('date_time'),reverse = True)
-	
-	#for data in chat_data:
+	message_list = dict()
 
-	for data in web_query_data:
-		conversation_id = data.conversation_id
-		sent_to_ids = set(data.sent_to)
-		sent_to_name_list = list()
-	
-		for ids in sent_to_ids:
+	for user in user_conversation_set:
+		user_conversation_id = str(user[0]) + "_" + str(user[1])
+		message = WebReply.objects.filter(conversation_id = user[1], user_id = user[0])[0].chat
+		user_name = GrabhaloUser.objects.filter(id = user[0])[0].name
 
-			if ids.isdigit():
-				
-				user_name = GrabhaloUser.objects.filter(user_id =  ids)
+		try: message_list[user_name].update({user_conversation_id:message})
+		except : message_list.update({user_name:{user_conversation_id:message}})
 
-				for name in user_name: 
-					sent_to_name = name.name
-
-				web_reply_data = WebReply.objects.filter(conversation_id = conversation_id).filter( Q(user_id = ids) |  Q(sent_to = ids))
-
-				if web_reply_data.count() > 1:
-
-					reply_dict={"chat":[]}		
-					for chat in web_reply_data:
-						send_by_name = GrabhaloUser.objects.filter(user_id =  chat.user_id)
-
-						if send_by_name.count() == 0:
-							send_by_name = "Admin"
-						else:
-							for name in send_by_name: 
-								send_by_name = name.name						
-
-						reply_dict["chat"].append({"reply" : chat.chat , "sent_to" : chat.sent_to,
-												   "send_by" : send_by_name,
-											       "date_time" : chat.date_time.strftime("%s %s" % (DATE_FORMAT, TIME_FORMAT)) })
-					
-					chat_dict.update({str(data.conversation_id) + '_' + str(ids) : { 
-									 "sent_to_name" : sent_to_name,
-									 "chat" : reply_dict["chat"] } } )
-				else:
-					send_by_name = GrabhaloUser.objects.filter(user_id =  data.user_id)
-
-					if send_by_name.count() == 0:
-						send_by_name = "Admin"
-					else:
-						for name in send_by_name: 
-							send_by_name = name.name					
-					
-					sent_to_name_list.append(str(sent_to_name))
-					reply_dict={"chat":[]}		
-					reply_dict["chat"].append({"reply" : data.user_query , "sent_to" : sent_to_ids,
-											   "send_by" : send_by_name,
-											   "date_time" : data.date_time.strftime("%s %s" % (DATE_FORMAT, TIME_FORMAT)) })					
-					chat_dict.update({str(data.conversation_id) + '_' + str(sent_to_ids) : { 
-									 "sent_to_name" : sent_to_name_list,
-									 "chat" : reply_dict["chat"] } } )
-	
-	ctx ={
-			'chat_dict' : chat_dict,
-			'form'		: form,
-	}
+	ctx = {"message_list" : message_list}
 	return render_to_response('dashboard/chats.html',ctx, context_instance = RequestContext(request))
-
-
-

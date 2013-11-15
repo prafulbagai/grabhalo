@@ -1,77 +1,50 @@
 {% extends "index.html" %}
-    {% block title%} {{user}} {% endblock %}
-
-    {% block footer %}
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-        <script type="text/javascript" src="http://code.jquery.com/jquery-2.0.3.js"></script>
-        <script src="/static/prettycheckable/prettyCheckable.js"></script>
-        <script src="/static/js/dashboard.js"></script>
-        <script type="text/javascript">
-			$(document).ready(function () {
-			    $('.span9').hide();
-
-			    $(".span3").click(function () {
-                    
-        			$(this).parent().siblings('.active').toggleClass("active");
-			        $(this).parent().toggleClass("active");
-
-			        $('.span9').hide();
-			        $(this).prev('.span9').show();
-			    });
-
-			});
-	    </script>
-
-       
+    {% block css %} 
+      <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.css"/>
+      <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-responsive.css"/>
+      <link rel="stylesheet" type="text/css" href="/static/css/login.css"/>
+      <link rel="stylesheet" type="text/css" href="/static/css/chats.css"/>
+      
     {% endblock %}
-        
+
     {% block content %}
 
-        <div class="row">
-            
-            <div class="span15">      
-        	    <br><br><br><br><br><br>
-            	 <ul class="nav nav-pills nav-stacked span5">
-                	<li><a href="{% url 'grabhalo_dashboard' %}" class="span3">Home</a></li>
-                	<li class = "active"><a href="{% url 'grabhalo_chats' %}" class="span3">Chats</a></li>
-                	<li><a href="{% url 'grabhalo_logout' %}" class="span3">Logout</a></li>
-            	</ul>        
+    <div class="row-fluid">
+        <div class="span2" id="nav">
+            <ul class="nav nav-pills nav-stacked">
+                <li><a href="{% url 'grabhalo_dashboard' %}">Home</a></li>
+                <li class = "active"><a href="{% url 'grabhalo_chats' %}">Chats</a></li>
+                <li><a href="{% url 'grabhalo_logout' %}">Logout</a></li>
+            </ul>        
+        </div>
+        
+        <div class="span8" id="chat">
+            <div id="selected_chat_div">
+                <h4 style="color:#3a87ad;text-align:center;"  >
+                    Inbox
+                    <br><br><br>
+                    Select a message to populate chats.
+                </h4>
             </div>
-                <h2>Welcome {{user }} </h2>
 
-                <div class="row">
-
-                {%for key,values in chat_dict.items%}
-				
-                    <div class="span9">
-                    
-                    <br><br>
-                    
-                    {% for k in values.chat%}
-                        <b>{{k.send_by}}</b> : {{k.reply}}<br>
-                        {{k.date_time}}<br><br>
-                    {%endfor%}
-                        <form id="form" method="POST" action="/dashboard/chats/">
-               
-                            {% csrf_token %}
-                            {{ form.as_p }}
-                            <input type="hidden" name="reply_id" value="{{key}}">
-                            <input type="submit" value="Send" class = "btn btn-primary" id = "button"> 
-                       </form>                             
-                    
-                    </div> <!--end of div class span9 -->
-                
-                            <div class="span3 pull-right">
-                                  <ul class="nav nav-pills nav-stacked span5">
-                <li class = "list"><a href="#" class="span3">{{values.sent_to_name}}</a></li>
-                                </ul>
-                        
- 
-                    </div> <!--end of div span3-->
-                    
-                    {%endfor%}
-                </div><!--end of div row-->
-            </div>
+                <div style="margin-top:380px;">
+                    <input type="text" placeholder = "Type Here!!!" id="chat_message" style="width: 70%;min-height: 50px;" >&nbsp;
+                    <input type="button" value="Send" class = "btn btn-primary" id = "chat_submit">             
+                </div>
+                <div id="alert"></div>
         </div>
 
+
+        <div class="span2" id="user_list">
+             <ul class="nav nav-pills nav-stacked" id="inbox">
+                {%for key,values in message_list.items%}        
+                    {% for k,v in values.items%}
+                        <li id="{{k}}"><a href="#">{{key}}</a><b>{{v}}</b></li>
+                    {%endfor%}
+                {% endfor %}        
+            </ul>
+        </div>
+    </div>
+
     {% endblock %}
+

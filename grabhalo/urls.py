@@ -5,9 +5,9 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
-	(r'^',include('apps.auth.urls')),
-	(r'^',include('apps.api.urls')),
-	(r'^',include('apps.dashboard.urls')),
+	url(r'^',include('apps.auth.urls')),
+	url(r'^',include('apps.api.urls')),
+	url(r'^dashboard/',include('apps.dashboard.urls')),
 	(r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root':settings.MEDIA_ROOT}),
     # Examples:
     # url(r'^$', 'grabhalo.views.home', name='home'),
